@@ -96,12 +96,12 @@ Add project-specific helpers here: XDG isolation, command wrappers with default 
 
 ### Custom Assertions (bats-assert-additions)
 
-Two additional assertion functions extend bats-assert for common CLI testing patterns:
+The bats-assert-additions library is bundled in this plugin at `lib/bats-assert-additions/`. Copy it into projects alongside bats-support and bats-assert. Two additional assertion functions extend bats-assert for common CLI testing patterns:
 
 - **`assert_output_unsorted`** -- Sorts output before comparing. Accepts `--regexp`, `--partial`, and stdin (`-`). Essential for testing commands with non-deterministic output ordering.
 - **`assert_output_cut`** -- Pipes output through `cut` before comparing. Accepts `-d` (delimiter), `-f` (fields), and `-s` (also sort). Useful for field-based output validation.
 
-See `references/patterns.md` for implementation details and usage examples.
+The full source is at `lib/bats-assert-additions/`. See `references/patterns.md` for usage examples.
 
 ## Nix Flake Integration
 
@@ -127,7 +127,7 @@ inputs = {
 };
 ```
 
-The bats-support and bats-assert libraries are vendored in `test_helper/` rather than pulled from Nix, as this allows including custom additions (bats-assert-additions).
+The bats-support and bats-assert libraries are vendored in `test_helper/` rather than pulled from Nix, as this allows including custom additions. Copy bats-assert-additions from this plugin's `lib/bats-assert-additions/` into the project's `test_helper/`.
 
 ## Sandcastle Environment Isolation
 
@@ -218,14 +218,19 @@ When setting up BATS in a new repo:
 
 1. Create `zz-tests_bats/` directory structure
 2. Vendor bats-support and bats-assert into `test_helper/`
-3. Create `common.bash` loading the assertion libraries
-4. Create `bin/run-sandcastle-bats.bash` with appropriate filesystem deny lists
-5. Add test justfile with `test-targets`, `test-tags`, and `test` recipes
-6. Wire root justfile to delegate to `zz-tests_bats/test`
-7. Add `bats`, `just`, and `sandcastle` to `flake.nix` devShell
-8. Create first `.bats` test file following the function-name pattern
+3. Copy `lib/bats-assert-additions/` from this plugin into `test_helper/bats-assert-additions/`
+4. Create `common.bash` loading the assertion libraries
+5. Create `bin/run-sandcastle-bats.bash` with appropriate filesystem deny lists
+6. Add test justfile with `test-targets`, `test-tags`, and `test` recipes
+7. Wire root justfile to delegate to `zz-tests_bats/test`
+8. Add `bats`, `just`, and `sandcastle` to `flake.nix` devShell
+9. Create first `.bats` test file following the function-name pattern
 
 ## Additional Resources
+
+### Bundled Libraries
+
+- **`lib/bats-assert-additions/`** -- Custom assertion library (assert_output_unsorted, assert_output_cut). Copy into `test_helper/bats-assert-additions/` when setting up a new project.
 
 ### Reference Files
 
