@@ -206,7 +206,7 @@ test: (test-targets "*.bats")
 ```
 
 Key patterns:
-- TAP output via `--tap` for CI/pipeline compatibility
+- TAP output via `--tap` for CI/pipeline compatibility (see `references/tap14.md` for the full TAP version 14 specification)
 - Parallel execution via `--jobs {{num_cpus()}}`
 - Per-test timeout via `BATS_TEST_TIMEOUT`
 - Tag-based filtering via `--filter-tags`
@@ -239,6 +239,7 @@ All three libraries live in `lib/` and should be copied into a project's `test_h
 For detailed patterns and advanced techniques, consult:
 - **`references/patterns.md`** -- Common helper patterns, custom assertions, fixture management, XDG isolation, command wrappers, server testing
 - **`references/sandcastle.md`** -- Sandcastle configuration format, security policies, network restrictions, advanced isolation patterns
+- **`references/tap14.md`** -- TAP version 14 specification. Load this when you need to understand, produce, or validate TAP output format (version line, plan, test points, YAML diagnostics, subtests, directives, escaping rules)
 
 ### Example Files
 
