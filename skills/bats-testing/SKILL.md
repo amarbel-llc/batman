@@ -96,12 +96,12 @@ Add project-specific helpers here: XDG isolation, command wrappers with default 
 
 ### Custom Assertions (bats-assert-additions)
 
-The bats-assert-additions library is bundled in this plugin at `lib/bats-assert-additions/`. Copy it into projects alongside bats-support and bats-assert. Two additional assertion functions extend bats-assert for common CLI testing patterns:
+All three assertion libraries are bundled in this plugin under `lib/`. Copy them into a project's `test_helper/` directory. Two additional assertion functions in bats-assert-additions extend bats-assert for common CLI testing patterns:
 
 - **`assert_output_unsorted`** -- Sorts output before comparing. Accepts `--regexp`, `--partial`, and stdin (`-`). Essential for testing commands with non-deterministic output ordering.
 - **`assert_output_cut`** -- Pipes output through `cut` before comparing. Accepts `-d` (delimiter), `-f` (fields), and `-s` (also sort). Useful for field-based output validation.
 
-The full source is at `lib/bats-assert-additions/`. See `references/patterns.md` for usage examples.
+See `references/patterns.md` for usage examples.
 
 ## Nix Flake Integration
 
@@ -127,7 +127,7 @@ inputs = {
 };
 ```
 
-The bats-support and bats-assert libraries are vendored in `test_helper/` rather than pulled from Nix, as this allows including custom additions. Copy bats-assert-additions from this plugin's `lib/bats-assert-additions/` into the project's `test_helper/`.
+The bats-support, bats-assert, and bats-assert-additions libraries are bundled in this plugin's `lib/` directory. Copy all three into the project's `test_helper/` when setting up.
 
 ## Sandcastle Environment Isolation
 
@@ -217,8 +217,7 @@ Key patterns:
 When setting up BATS in a new repo:
 
 1. Create `zz-tests_bats/` directory structure
-2. Vendor bats-support and bats-assert into `test_helper/`
-3. Copy `lib/bats-assert-additions/` from this plugin into `test_helper/bats-assert-additions/`
+2. Copy `lib/bats-support/`, `lib/bats-assert/`, and `lib/bats-assert-additions/` from this plugin into `test_helper/`
 4. Create `common.bash` loading the assertion libraries
 5. Create `bin/run-sandcastle-bats.bash` with appropriate filesystem deny lists
 6. Add test justfile with `test-targets`, `test-tags`, and `test` recipes
@@ -230,7 +229,10 @@ When setting up BATS in a new repo:
 
 ### Bundled Libraries
 
-- **`lib/bats-assert-additions/`** -- Custom assertion library (assert_output_unsorted, assert_output_cut). Copy into `test_helper/bats-assert-additions/` when setting up a new project.
+All three libraries live in `lib/` and should be copied into a project's `test_helper/`:
+- **`lib/bats-support/`** -- Core support library (output formatting, error helpers, lang utilities)
+- **`lib/bats-assert/`** -- Standard assertion library (assert_success, assert_output, assert_line, etc.)
+- **`lib/bats-assert-additions/`** -- Custom assertions (assert_output_unsorted, assert_output_cut)
 
 ### Reference Files
 
