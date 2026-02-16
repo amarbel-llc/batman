@@ -72,6 +72,10 @@
             bats-assert
             bats-assert-additions
           ];
+          postBuild = ''
+            mkdir -p $out/nix-support
+            echo 'export BATS_LIB_PATH="'"$out"'/share/bats''${BATS_LIB_PATH:+:$BATS_LIB_PATH}"' > $out/nix-support/setup-hook
+          '';
         };
 
         robin = pkgs.stdenvNoCC.mkDerivation {
@@ -117,9 +121,10 @@
         };
 
         devShells.default = pkgs.mkShell {
-          packages = with pkgs; [
-            just
-            gum
+          packages = [
+            pkgs.just
+            pkgs.gum
+            bats-libs
           ];
 
           inputsFrom = [
