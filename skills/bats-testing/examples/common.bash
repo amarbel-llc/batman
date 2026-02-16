@@ -1,6 +1,6 @@
-load "$BATS_CWD/test_helper/bats-support/load"
-load "$BATS_CWD/test_helper/bats-assert/load"
-load "$BATS_CWD/test_helper/bats-assert-additions/load"
+bats_load_library bats-support
+bats_load_library bats-assert
+bats_load_library bats-assert-additions
 
 # XDG isolation: route all XDG directories into test temp dir
 set_xdg() {
