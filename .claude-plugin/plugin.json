@@ -1,7 +1,10 @@
 {
-  "name": "bats-testing",
+  "name": "robin",
   "description": "Expert skill for setting up and writing BATS integration tests with bats-support libraries, justfile integration, and sandcastle environment isolation",
   "author": {
     "name": "friedenberg"
-  }
+  },
+  "skills": [
+    "./skills/bats-testing"
+  ]
 }
