@@ -1,6 +1,6 @@
 ---
 name: BATS Testing Setup
-description: This skill should be used when the user asks to "set up BATS tests", "add integration tests", "create bats test files", "configure bats-support", "add test targets to justfile", "isolate tests with sandcastle", "write a .bats test", "set up test helpers", or mentions BATS testing, bats-assert, bats-support, sandcastle test isolation, or CLI integration testing.
+description: This skill should be used when the user asks to "set up BATS tests", "add integration tests", "create bats test files", "configure bats-support", "add test targets to justfile", "isolate tests with sandcastle", "write a .bats test", "set up test helpers", "add CLI tests", "add functional tests", "test my CLI tool", "set up bats-core", or mentions BATS testing, bats-core, bats-assert, bats-support, sandcastle test isolation, CLI integration testing, CLI testing, or functional testing.
 version: 0.1.0
 ---
 
