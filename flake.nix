@@ -6,6 +6,11 @@
     nixpkgs-master.url = "github:NixOS/nixpkgs/b28c4999ed71543e71552ccfd0d7e68c581ba7e9";
     utils.url = "https://flakehub.com/f/numtide/flake-utils/0.1.102";
     shell.url = "github:friedenberg/eng?dir=devenvs/shell";
+    purse-first = {
+      url = "github:amarbel-llc/purse-first";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+    };
   };
 
   outputs =
@@ -15,6 +20,7 @@
       nixpkgs-master,
       utils,
       shell,
+      purse-first,
     }:
     utils.lib.eachDefaultSystem (
       system:
@@ -67,11 +73,47 @@
             bats-assert-additions
           ];
         };
+
+        robin = pkgs.stdenvNoCC.mkDerivation {
+          pname = "robin";
+          version = "0.1.0";
+          src = ./.;
+          dontBuild = true;
+
+          nativeBuildInputs = [
+            purse-first.packages.${system}.purse-first
+          ];
+
+          installPhase = ''
+            mkdir -p $out/share/purse-first/robin/skills
+            cp -r skills/* $out/share/purse-first/robin/skills/
+
+            staging=$(mktemp -d)
+            ln -s $out/share/purse-first/robin/skills $staging/skills
+            mkdir -p $staging/.claude-plugin
+            cp .claude-plugin/plugin.json $staging/.claude-plugin/plugin.json
+            chmod u+w $staging/.claude-plugin/plugin.json
+            purse-first generate-local-plugin --root $staging
+            cp $staging/.claude-plugin/plugin.json $out/share/purse-first/robin/plugin.json
+          '';
+        };
       in
       {
         packages = {
-          default = bats-libs;
-          inherit bats-support bats-assert bats-assert-additions;
+          default = pkgs.symlinkJoin {
+            name = "batman";
+            paths = [
+              bats-libs
+              robin
+            ];
+          };
+          inherit
+            bats-support
+            bats-assert
+            bats-assert-additions
+            bats-libs
+            robin
+            ;
         };
 
         devShells.default = pkgs.mkShell {
