@@ -59,6 +59,41 @@ Key conventions:
 - Always `export output` in setup for assertion access
 - Load helpers relative to `$BATS_TEST_FILE`
 
+## Test Data Self-Containment
+
+Tests must never rely on data outside the test itself. Every test must create or declare all data it needs — no reading from the user's home directory, no depending on pre-existing files, no assuming environment state.
+
+**Required:** All test data comes from one of:
+- **Inline fixtures** — data declared directly in the test function or helper
+- **Fixture files** — static data stored in the test directory (e.g. `zz-tests_bats/migration/v1/`)
+- **Generated fixtures** — data created programmatically in `setup()` or a helper function
+- **`$BATS_TEST_TMPDIR`** — all generated files go here, cleaned up automatically
+
+**Forbidden:**
+- Reading files from `$HOME`, `$PWD` (project root), or any path outside the test directory
+- Depending on tools, configs, or services not provided by the devShell
+- Assuming environment variables are set (other than those explicitly exported in `setup()`)
+- Sharing state between test functions (each test must stand alone)
+
+```bash
+# ❌ BAD: depends on data outside the test
+function imports_user_config { # @test
+  run my_command import ~/.config/myapp/settings.json
+  assert_success
+}
+
+# ✅ GOOD: creates its own fixture
+function imports_config { # @test
+  cat > "$BATS_TEST_TMPDIR/settings.json" <<-EOF
+    {"key": "value", "debug": false}
+  EOF
+  run my_command import "$BATS_TEST_TMPDIR/settings.json"
+  assert_success
+}
+```
+
+This principle is enforced by sandcastle at runtime — tests that read from denied paths will fail. But write tests correctly from the start rather than relying on sandcastle to catch violations. See `references/patterns.md` for fixture management patterns.
+
 ## Common Test Helper (common.bash)
 
 Create `zz-tests_bats/common.bash` to load assertion libraries and define shared utilities:
