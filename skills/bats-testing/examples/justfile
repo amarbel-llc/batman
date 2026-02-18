@@ -7,12 +7,12 @@ bats_timeout := "5"
 
 # Run specific test files (default: all .bats files)
 test-targets *targets="*.bats":
-  BATS_TEST_TIMEOUT="{{bats_timeout}}" ./bin/run-sandcastle-bats.bash \
+  BATS_TEST_TIMEOUT="{{bats_timeout}}" \
     bats --tap --jobs {{num_cpus()}} {{targets}}
 
 # Run tests matching specific tags
 test-tags *tags:
-  BATS_TEST_TIMEOUT="{{bats_timeout}}" ./bin/run-sandcastle-bats.bash \
+  BATS_TEST_TIMEOUT="{{bats_timeout}}" \
     bats --tap --jobs {{num_cpus()}} --filter-tags {{tags}} *.bats
 
 # Run all tests
