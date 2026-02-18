@@ -64,86 +64,17 @@ The configuration is a JSON file with two top-level sections:
 | `allowedDomains` | `string[]` | Domains that may be accessed (allowlist) |
 | `deniedDomains` | `string[]` | Domains that are blocked (denylist) |
 
-## Standard Security Policy for BATS Tests
+## Batman Bats Wrapper
 
-The recommended deny list for integration tests:
+Batman provides a `bats` wrapper that automatically invokes sandcastle. When you use `batman.packages.${system}.bats` in your devShell, every `bats` invocation is sandboxed with:
 
-```json
-{
-  "filesystem": {
-    "denyRead": [
-      "$HOME/.ssh",
-      "$HOME/.aws",
-      "$HOME/.gnupg",
-      "$HOME/.config",
-      "$HOME/.local",
-      "$HOME/.password-store",
-      "$HOME/.kube"
-    ],
-    "denyWrite": [],
-    "allowWrite": [
-      "/tmp"
-    ]
-  },
-  "network": {
-    "allowedDomains": [],
-    "deniedDomains": []
-  }
-}
-```
+- **Read denied:** `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.config`, `~/.local`, `~/.password-store`, `~/.kube`
+- **Write allowed:** `/tmp` only
+- **Network:** unrestricted
 
-This policy:
-- Blocks access to SSH keys, AWS credentials, GPG keys, and Kubernetes configs
-- Blocks general config/local directories that may contain tokens or secrets
-- Allows writing only to `/tmp` (where `$BATS_TEST_TMPDIR` lives)
-- Leaves network unrestricted by default (empty lists = no restrictions)
+No wrapper script or manual sandcastle configuration is needed. Just run `bats` normally.
 
-## Runner Script Pattern
-
-The standard `run-sandcastle-bats.bash` wrapper:
-
-```bash
-#!/usr/bin/env bash
-set -e
-
-srt_config="$(mktemp)"
-trap 'rm -f "$srt_config"' EXIT
-
-cat >"$srt_config" <<SETTINGS
-{
-  "filesystem": {
-    "denyRead": [
-      "$HOME/.ssh",
-      "$HOME/.aws",
-      "$HOME/.gnupg",
-      "$HOME/.config",
-      "$HOME/.local",
-      "$HOME/.password-store",
-      "$HOME/.kube"
-    ],
-    "denyWrite": [],
-    "allowWrite": [
-      "/tmp"
-    ]
-  },
-  "network": {
-    "allowedDomains": [],
-    "deniedDomains": []
-  }
-}
-SETTINGS
-
-exec sandcastle \
-  --shell bash \
-  --config "$srt_config" \
-  "$@"
-```
-
-Key implementation details:
-- Config is written to a temp file (expanded `$HOME` at runtime)
-- Temp file is cleaned up on exit via trap
-- `exec` replaces the shell process to avoid extra process overhead
-- `"$@"` passes all arguments through to sandcastle
+For custom sandcastle policies beyond the defaults (e.g., network restrictions, additional deny paths), you can invoke sandcastle directly — see the CLI interface section above.
 
 ## Network-Restricted Policies
 
