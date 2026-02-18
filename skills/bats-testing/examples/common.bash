@@ -10,6 +10,23 @@ set_xdg() {
   export XDG_STATE_HOME="$loc/.xdg/state"
   export XDG_CACHE_HOME="$loc/.xdg/cache"
   export XDG_RUNTIME_HOME="$loc/.xdg/runtime"
+  mkdir -p "$XDG_DATA_HOME" "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" \
+    "$XDG_CACHE_HOME" "$XDG_RUNTIME_HOME"
+}
+
+# Test home isolation: fake HOME + XDG + git config
+# Call in setup() for any test that touches HOME, git, or config files.
+setup_test_home() {
+  export REAL_HOME="$HOME"
+  export HOME="$BATS_TEST_TMPDIR/home"
+  mkdir -p "$HOME"
+  set_xdg "$BATS_TEST_TMPDIR"
+  # GIT_CONFIG_GLOBAL takes precedence over XDG_CONFIG_HOME — override it
+  mkdir -p "$XDG_CONFIG_HOME/git"
+  export GIT_CONFIG_GLOBAL="$XDG_CONFIG_HOME/git/config"
+  git config --global user.name "Test User"
+  git config --global user.email "test@example.com"
+  git config --global init.defaultBranch main
 }
 
 # Cleanup: remove immutable flags and delete test temp dir

@@ -129,6 +129,33 @@ With this setup, `bats_load_library bats-support`, `bats_load_library bats-asser
 
 ## Sandcastle Environment Isolation
 
+Sandcastle and XDG isolation are complementary layers:
+
+- **Sandcastle** catches leaks by denying access to real `$HOME/.config`, `$HOME/.ssh`, etc. It is the enforcement mechanism: if a test accidentally reads or writes outside its sandbox, sandcastle makes it fail loudly.
+- **XDG isolation** (`set_xdg`) prevents leaks by redirecting `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, etc. into `$BATS_TEST_TMPDIR`. It is the prevention mechanism: tests write to the right place in the first place.
+
+Both layers are required. Without sandcastle, XDG isolation can silently fail (e.g. `GIT_CONFIG_GLOBAL` overriding `XDG_CONFIG_HOME`). Without XDG isolation, sandcastle will block legitimate test operations that need config directories.
+
+### Git Config Isolation
+
+`git config --global` uses `$XDG_CONFIG_HOME/git/config` by default, but **`GIT_CONFIG_GLOBAL` takes precedence** if set. Many dotfile setups (rcm, direnv) export `GIT_CONFIG_GLOBAL` to an absolute path, which bypasses `$HOME` and `$XDG_CONFIG_HOME` redirection entirely. Always override `GIT_CONFIG_GLOBAL` alongside the XDG vars in `setup_test_home`:
+
+```bash
+setup_test_home() {
+  export REAL_HOME="$HOME"
+  export HOME="$BATS_TEST_TMPDIR/home"
+  mkdir -p "$HOME"
+  set_xdg "$BATS_TEST_TMPDIR"
+  mkdir -p "$XDG_CONFIG_HOME/git"
+  export GIT_CONFIG_GLOBAL="$XDG_CONFIG_HOME/git/config"
+  git config --global user.name "Test User"
+  git config --global user.email "test@example.com"
+  git config --global init.defaultBranch main
+}
+```
+
+The `mkdir -p "$XDG_CONFIG_HOME/git"` is required because `set_xdg` creates the top-level XDG directories but git needs the `git/` subdirectory to exist before it can write config files.
+
 Wrap BATS execution with sandcastle to prevent tests from accessing sensitive user data or writing outside `/tmp`. Create `zz-tests_bats/bin/run-sandcastle-bats.bash`:
 
 ```bash
