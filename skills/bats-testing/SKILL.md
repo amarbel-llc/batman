@@ -17,8 +17,6 @@ project/
 ├── zz-tests_bats/
 │   ├── justfile
 │   ├── common.bash
-│   ├── bin/
-│   │   └── run-sandcastle-bats.bash
 │   ├── some_feature.bats
 │   └── another_feature.bats
 ├── justfile                  (root justfile delegates to zz-tests_bats/)
@@ -71,7 +69,7 @@ bats_load_library bats-assert
 bats_load_library bats-assert-additions
 ```
 
-The `bats_load_library` function searches `BATS_LIB_PATH` for each library. This is set automatically when `batman.packages.${system}.bats-libs` is in your devShell packages (see Nix Flake Integration below).
+The `bats_load_library` function searches `BATS_LIB_PATH` for each library. This is set automatically when `batman.packages.${system}.default` is in your devShell packages (see Nix Flake Integration below).
 
 Add project-specific helpers here: XDG isolation, command wrappers with default flags, fixture loaders, and cleanup functions. See `references/patterns.md` for detailed examples.
 
@@ -103,29 +101,28 @@ See `references/patterns.md` for usage examples.
 
 ## Nix Flake Integration
 
-Add `batman` and `sandcastle` to flake inputs, then include `bats-libs` in the devShell packages. The `bats-libs` package includes a setup hook that automatically exports `BATS_LIB_PATH`, so `bats_load_library` works without any manual environment configuration.
+Add `batman` as a flake input, then include `batman.packages.${system}.default` in the devShell packages. The default package bundles everything: assertion libraries (`bats-libs`), a sandcastle-wrapped `bats` binary, and the `robin` skill plugin. The `bats-libs` component includes a setup hook that automatically exports `BATS_LIB_PATH`, so `bats_load_library` works without any manual environment configuration.
 
 ```nix
 inputs = {
   batman.url = "github:amarbel-llc/batman";
-  sandcastle.url = "github:amarbel-llc/sandcastle";
 };
 ```
 
 ```nix
 devShells.default = pkgs.mkShell {
   packages = (with pkgs; [
-    bats
     just
     gum
   ]) ++ [
-    batman.packages.${system}.bats-libs
-    sandcastle.packages.${system}.default
+    batman.packages.${system}.default
   ];
 };
 ```
 
-With this setup, `bats_load_library bats-support`, `bats_load_library bats-assert`, and `bats_load_library bats-assert-additions` all resolve automatically via `BATS_LIB_PATH`.
+Do **not** add `pkgs.bats` separately — batman provides its own `bats` binary that wraps sandcastle for automatic environment isolation. Adding `pkgs.bats` alongside would shadow it.
+
+With this setup, `bats_load_library bats-support`, `bats_load_library bats-assert`, and `bats_load_library bats-assert-additions` all resolve automatically via `BATS_LIB_PATH`, and every `bats` invocation is sandboxed transparently.
 
 ## Sandcastle Environment Isolation
 
@@ -156,46 +153,15 @@ setup_test_home() {
 
 The `mkdir -p "$XDG_CONFIG_HOME/git"` is required because `set_xdg` creates the top-level XDG directories but git needs the `git/` subdirectory to exist before it can write config files.
 
-Wrap BATS execution with sandcastle to prevent tests from accessing sensitive user data or writing outside `/tmp`. Create `zz-tests_bats/bin/run-sandcastle-bats.bash`:
+Batman's packaged `bats` binary wraps sandcastle transparently — every `bats` invocation is automatically sandboxed with sensible defaults:
 
-```bash
-#!/usr/bin/env bash
-set -e
+- **Read denied:** `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.config`, `~/.local`, `~/.password-store`, `~/.kube`
+- **Write allowed:** `/tmp` only
+- **Network:** unrestricted
 
-srt_config="$(mktemp)"
-trap 'rm -f "$srt_config"' EXIT
+No wrapper script or manual sandcastle configuration is needed. Just run `bats` normally.
 
-cat >"$srt_config" <<SETTINGS
-{
-  "filesystem": {
-    "denyRead": [
-      "$HOME/.ssh",
-      "$HOME/.aws",
-      "$HOME/.gnupg",
-      "$HOME/.config",
-      "$HOME/.local",
-      "$HOME/.password-store",
-      "$HOME/.kube"
-    ],
-    "denyWrite": [],
-    "allowWrite": [
-      "/tmp"
-    ]
-  },
-  "network": {
-    "allowedDomains": [],
-    "deniedDomains": []
-  }
-}
-SETTINGS
-
-exec sandcastle \
-  --shell bash \
-  --config "$srt_config" \
-  "$@"
-```
-
-Mark it executable. Sandcastle uses bubblewrap under the hood to enforce filesystem and network restrictions. See `references/sandcastle.md` for configuration details.
+For custom sandcastle policies beyond the defaults (e.g., network restrictions, additional deny paths), you can invoke sandcastle directly. See `references/sandcastle.md` for configuration details.
 
 ## Justfile Integration
 
@@ -220,11 +186,11 @@ export CMD_BIN := "my-command"
 bats_timeout := "5"
 
 test-targets *targets="*.bats":
-  BATS_TEST_TIMEOUT="{{bats_timeout}}" ./bin/run-sandcastle-bats.bash \
+  BATS_TEST_TIMEOUT="{{bats_timeout}}" \
     bats --tap --jobs {{num_cpus()}} {{targets}}
 
 test-tags *tags:
-  BATS_TEST_TIMEOUT="{{bats_timeout}}" ./bin/run-sandcastle-bats.bash \
+  BATS_TEST_TIMEOUT="{{bats_timeout}}" \
     bats --tap --jobs {{num_cpus()}} --filter-tags {{tags}} *.bats
 
 test: (test-targets "*.bats")
@@ -235,20 +201,19 @@ Key patterns:
 - Parallel execution via `--jobs {{num_cpus()}}`
 - Per-test timeout via `BATS_TEST_TIMEOUT`
 - Tag-based filtering via `--filter-tags`
-- All execution routed through sandcastle wrapper
+- Sandcastle isolation is automatic — batman's `bats` binary handles it
 
 ## Setup Checklist
 
 When setting up BATS in a new repo:
 
-1. Add `batman` and `sandcastle` flake inputs to `flake.nix`
-2. Add `batman.packages.${system}.bats-libs`, `bats`, and `sandcastle` to devShell packages
+1. Add `batman` flake input to `flake.nix`
+2. Add `batman.packages.${system}.default` to devShell packages (do not add `pkgs.bats` separately)
 3. Create `zz-tests_bats/` directory structure
 4. Create `common.bash` using `bats_load_library` to load assertion libraries
-5. Create `bin/run-sandcastle-bats.bash` with appropriate filesystem deny lists
-6. Add test justfile with `test-targets`, `test-tags`, and `test` recipes
-7. Wire root justfile to delegate to `zz-tests_bats/test`
-8. Create first `.bats` test file following the function-name pattern
+5. Add test justfile with `test-targets`, `test-tags`, and `test` recipes
+6. Wire root justfile to delegate to `zz-tests_bats/test`
+7. Create first `.bats` test file following the function-name pattern
 
 ## Additional Resources
 
@@ -270,6 +235,5 @@ For detailed patterns and advanced techniques, consult:
 
 Working templates in `examples/`:
 - **`examples/common.bash`** -- Starter common.bash with XDG isolation and cleanup
-- **`examples/run-sandcastle-bats.bash`** -- Sandcastle wrapper script template
 - **`examples/example.bats`** -- Annotated example test file
 - **`examples/justfile`** -- Test-suite justfile template
