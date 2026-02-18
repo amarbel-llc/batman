@@ -11,6 +11,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-master.follows = "nixpkgs-master";
     };
+    sandcastle = {
+      url = "github:amarbel-llc/sandcastle";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-master.follows = "nixpkgs-master";
+      inputs.utils.follows = "utils";
+    };
   };
 
   outputs =
@@ -21,6 +27,7 @@
       utils,
       shell,
       purse-first,
+      sandcastle,
     }:
     utils.lib.eachDefaultSystem (
       system:
