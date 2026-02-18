@@ -72,12 +72,25 @@
           '';
         };
 
+        tap-writer = pkgs.stdenvNoCC.mkDerivation {
+          pname = "tap-writer";
+          version = "0.1.0";
+          src = ./lib/tap-writer;
+          dontBuild = true;
+          installPhase = ''
+            mkdir -p $out/share/bats/tap-writer/src
+            cp load.bash $out/share/bats/tap-writer/
+            cp src/*.bash $out/share/bats/tap-writer/src/
+          '';
+        };
+
         bats-libs = pkgs.symlinkJoin {
           name = "bats-libs";
           paths = [
             bats-support
             bats-assert
             bats-assert-additions
+            tap-writer
           ];
           postBuild = ''
             mkdir -p $out/nix-support
@@ -163,6 +176,7 @@
             bats-support
             bats-assert
             bats-assert-additions
+            tap-writer
             bats-libs
             bats
             robin
