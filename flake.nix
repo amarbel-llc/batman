@@ -85,6 +85,46 @@
           '';
         };
 
+        sandcastle-pkg = sandcastle.packages.${system}.default;
+
+        bats = pkgs.writeShellApplication {
+          name = "bats";
+          runtimeInputs = [
+            pkgs.bats
+            sandcastle-pkg
+          ];
+          text = ''
+            config="$(mktemp)"
+            trap 'rm -f "$config"' EXIT
+
+            cat >"$config" <<SANDCASTLE_CONFIG
+            {
+              "filesystem": {
+                "denyRead": [
+                  "$HOME/.ssh",
+                  "$HOME/.aws",
+                  "$HOME/.gnupg",
+                  "$HOME/.config",
+                  "$HOME/.local",
+                  "$HOME/.password-store",
+                  "$HOME/.kube"
+                ],
+                "denyWrite": [],
+                "allowWrite": [
+                  "/tmp"
+                ]
+              },
+              "network": {
+                "allowedDomains": [],
+                "deniedDomains": []
+              }
+            }
+            SANDCASTLE_CONFIG
+
+            exec sandcastle --shell bash --config "$config" bats "$@"
+          '';
+        };
+
         robin = pkgs.stdenvNoCC.mkDerivation {
           pname = "robin";
           version = "0.1.0";
@@ -115,6 +155,7 @@
             name = "batman";
             paths = [
               bats-libs
+              bats
               robin
             ];
           };
@@ -123,6 +164,7 @@
             bats-assert
             bats-assert-additions
             bats-libs
+            bats
             robin
             ;
         };
@@ -132,6 +174,7 @@
             pkgs.just
             pkgs.gum
             bats-libs
+            bats
           ];
 
           inputsFrom = [
