@@ -29,12 +29,6 @@ setup_test_home() {
   git config --global init.defaultBranch main
 }
 
-# Cleanup: remove immutable flags and delete test temp dir
-chflags_and_rm() {
-  chflags -R nouchg "$BATS_TEST_TMPDIR" 2>/dev/null || true
-  rm -rf "$BATS_TEST_TMPDIR"
-}
-
 # Command wrapper: runs the binary under test with normalized defaults
 cmd_defaults=(
   # Add project-specific default flags here to normalize output

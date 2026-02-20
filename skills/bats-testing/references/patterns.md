@@ -114,21 +114,6 @@ teardown() {
 }
 ```
 
-### Filesystem Flag Cleanup
-
-When testing tools that set immutable file flags (macOS/BSD):
-
-```bash
-function chflags_and_rm {
-  chflags -R nouchg "$BATS_TEST_TMPDIR" 2>/dev/null || true
-  rm -rf "$BATS_TEST_TMPDIR"
-}
-
-teardown() {
-  chflags_and_rm
-}
-```
-
 ## Custom Assertion: assert_output_unsorted
 
 Sorts output line-by-line before comparing. Essential for commands that produce output in non-deterministic order.

@@ -36,7 +36,9 @@ setup() {
 }
 
 teardown() {
-  chflags_and_rm
+  # Runs after each test regardless of success/failure. BATS_TEST_TMPDIR is
+  # cleaned up automatically by bats — use teardown for resources created
+  # outside managed temp dirs (e.g. background processes, external files).
 }
 
 function descriptive_test_name { # @test
