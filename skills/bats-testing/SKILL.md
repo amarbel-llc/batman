@@ -193,7 +193,7 @@ The `mkdir -p "$XDG_CONFIG_HOME/git"` is required because `set_xdg` creates the 
 Batman's packaged `bats` binary wraps sandcastle transparently — every `bats` invocation is automatically sandboxed with sensible defaults:
 
 - **Read denied:** `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.config`, `~/.local`, `~/.password-store`, `~/.kube`
-- **Write allowed:** `/tmp` only
+- **Write allowed:** `/tmp` (and `/private/tmp` on macOS)
 - **Network:** unrestricted
 
 No wrapper script or manual sandcastle configuration is needed. Just run `bats` normally.

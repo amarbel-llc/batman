@@ -69,7 +69,7 @@ The configuration is a JSON file with two top-level sections:
 Batman's `bats` wrapper automatically invokes sandcastle. Every `bats` invocation is sandboxed with:
 
 - **Read denied:** `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.config`, `~/.local`, `~/.password-store`, `~/.kube`
-- **Write allowed:** `/tmp` only
+- **Write allowed:** `/tmp` (and `/private/tmp` on macOS)
 - **Network:** unrestricted
 
 No wrapper script or manual sandcastle configuration is needed. Just run `bats` normally.
