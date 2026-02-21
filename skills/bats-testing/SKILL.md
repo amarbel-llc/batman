@@ -106,7 +106,7 @@ bats_load_library bats-assert
 bats_load_library bats-assert-additions
 ```
 
-The `bats_load_library` function searches `BATS_LIB_PATH` for each library. This is set automatically when `batman.packages.${system}.default` is in your devShell packages (see Nix Flake Integration below).
+The `bats_load_library` function searches `BATS_LIB_PATH` for each library. Batman's `bats` wrapper automatically appends the bundled libraries to `BATS_LIB_PATH` at runtime — no devShell setup-hook or manual configuration needed. If you set `BATS_LIB_PATH` before invoking `bats`, your paths take precedence (searched first).
 
 Add project-specific helpers here: XDG isolation, command wrappers with default flags, fixture loaders, and cleanup functions. See `references/patterns.md` for detailed examples.
 
@@ -138,7 +138,7 @@ See `references/patterns.md` for usage examples.
 
 ## Nix Flake Integration
 
-Add `batman` as a flake input, then include `batman.packages.${system}.default` in the devShell packages. The default package bundles everything: assertion libraries (`bats-libs`), a sandcastle-wrapped `bats` binary, and the `robin` skill plugin. The `bats-libs` component includes a setup hook that automatically exports `BATS_LIB_PATH`, so `bats_load_library` works without any manual environment configuration.
+Add `batman` as a flake input, then include `batman.packages.${system}.default` in the devShell packages. The default package bundles everything: assertion libraries (`bats-libs`), the `bats` wrapper, and the `robin` skill plugin. The `bats` wrapper automatically handles `BATS_LIB_PATH`, sandcastle isolation, and TAP output — no setup-hooks or manual environment configuration needed.
 
 ```nix
 inputs = {
@@ -159,7 +159,7 @@ devShells.default = pkgs.mkShell {
 
 Do **not** add `pkgs.bats` separately — batman provides its own `bats` binary that wraps sandcastle for automatic environment isolation. Adding `pkgs.bats` alongside would shadow it.
 
-With this setup, `bats_load_library bats-support`, `bats_load_library bats-assert`, and `bats_load_library bats-assert-additions` all resolve automatically via `BATS_LIB_PATH`, and every `bats` invocation is sandboxed transparently.
+With this setup, `bats_load_library bats-support`, `bats_load_library bats-assert`, and `bats_load_library bats-assert-additions` all resolve automatically, and every `bats` invocation is sandboxed transparently.
 
 ## Sandcastle Environment Isolation
 
@@ -204,41 +204,40 @@ For custom sandcastle policies beyond the defaults (e.g., network restrictions, 
 
 ### Root justfile
 
-Delegate test orchestration from the project root:
+Delegate test orchestration from the project root. Use `--bin-dir` to make the freshly-built binary available to tests via PATH:
 
 ```makefile
-test-bats: build test-bats-run
-
-test-bats-run $PATH=(dir_build / "debug" + ":" + env("PATH")):
-  just zz-tests_bats/test
+test-bats: build
+  just zz-tests_bats/test --bin-dir {{dir_build}}/debug
 
 test: test-go test-bats
 ```
 
+The `--bin-dir` flag prepends the given directory to `PATH` before running bats. Tests find the binary through standard command lookup — no special env vars needed.
+
 ### Test-suite justfile (zz-tests_bats/justfile)
 
 ```makefile
-export CMD_BIN := "my-command"
-
 bats_timeout := "5"
 
 test-targets *targets="*.bats":
   BATS_TEST_TIMEOUT="{{bats_timeout}}" \
-    bats --tap --jobs {{num_cpus()}} {{targets}}
+    bats --jobs {{num_cpus()}} {{targets}}
 
 test-tags *tags:
   BATS_TEST_TIMEOUT="{{bats_timeout}}" \
-    bats --tap --jobs {{num_cpus()}} --filter-tags {{tags}} *.bats
+    bats --jobs {{num_cpus()}} --filter-tags {{tags}} *.bats
 
 test: (test-targets "*.bats")
 ```
 
 Key patterns:
-- TAP output via `--tap` for CI/pipeline compatibility (see `references/tap14.md` for the full TAP version 14 specification)
+- TAP output is automatic (wrapper defaults to `--tap` unless another formatter is specified)
 - Parallel execution via `--jobs {{num_cpus()}}`
 - Per-test timeout via `BATS_TEST_TIMEOUT`
 - Tag-based filtering via `--filter-tags`
 - Sandcastle isolation is automatic — batman's `bats` binary handles it
+- `--bin-dir` flags pass through from the root justfile via `{{targets}}`
 
 ## Setup Checklist
 
@@ -256,7 +255,7 @@ When setting up BATS in a new repo:
 
 ### Bundled Libraries
 
-All three libraries are packaged in `bats-libs` and available via `BATS_LIB_PATH` when the flake input is added to your devShell:
+All libraries are packaged in `bats-libs` and available via `BATS_LIB_PATH` automatically when using batman's `bats` wrapper:
 - **bats-support** -- Core support library (output formatting, error helpers, lang utilities)
 - **bats-assert** -- Standard assertion library (assert_success, assert_output, assert_line, etc.)
 - **bats-assert-additions** -- Custom assertions (assert_output_unsorted, assert_output_cut)
