@@ -1,10 +1,15 @@
 
-default: build
+default: build test
 
 build: build-nix
 
 build-nix:
   nix build
+
+test: test-bats
+
+test-bats:
+  ./result/bin/bats --no-sandbox zz-tests_bats/bats_wrapper.bats
 
 check:
     nix develop --command shellcheck lib/*/load.bash lib/*/src/*.bash
