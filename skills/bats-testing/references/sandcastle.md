@@ -66,7 +66,7 @@ The configuration is a JSON file with two top-level sections:
 
 ## Batman Bats Wrapper
 
-Batman provides a `bats` wrapper that automatically invokes sandcastle. When you use `batman.packages.${system}.bats` in your devShell, every `bats` invocation is sandboxed with:
+Batman's `bats` wrapper automatically invokes sandcastle. Every `bats` invocation is sandboxed with:
 
 - **Read denied:** `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.config`, `~/.local`, `~/.password-store`, `~/.kube`
 - **Write allowed:** `/tmp` only
@@ -74,7 +74,13 @@ Batman provides a `bats` wrapper that automatically invokes sandcastle. When you
 
 No wrapper script or manual sandcastle configuration is needed. Just run `bats` normally.
 
-For custom sandcastle policies beyond the defaults (e.g., network restrictions, additional deny paths), you can invoke sandcastle directly — see the CLI interface section above.
+To skip sandcastle (e.g., for debugging sandbox issues), pass `--no-sandbox`:
+
+```bash
+bats --no-sandbox my_test.bats
+```
+
+For custom sandcastle policies beyond the defaults (e.g., network restrictions, additional deny paths), use `--no-sandbox` and invoke sandcastle directly — see the CLI interface section above.
 
 ## Network-Restricted Policies
 
