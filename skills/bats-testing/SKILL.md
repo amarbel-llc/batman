@@ -198,7 +198,7 @@ Batman's packaged `bats` binary wraps sandcastle transparently — every `bats` 
 
 No wrapper script or manual sandcastle configuration is needed. Just run `bats` normally.
 
-For custom sandcastle policies beyond the defaults (e.g., network restrictions, additional deny paths), you can invoke sandcastle directly. See `references/sandcastle.md` for configuration details.
+For custom sandcastle policies beyond the defaults (e.g., network restrictions, additional deny paths), use `--no-sandbox` and invoke sandcastle directly. See `references/sandcastle.md` for configuration details.
 
 ## Justfile Integration
 
@@ -266,6 +266,7 @@ For detailed patterns and advanced techniques, consult:
 - **`references/patterns.md`** -- Common helper patterns, custom assertions, fixture management, XDG isolation, command wrappers, server testing
 - **`references/sandcastle.md`** -- Sandcastle configuration format, security policies, network restrictions, advanced isolation patterns
 - **`references/tap14.md`** -- TAP version 14 specification. Load this when you need to understand, produce, or validate TAP output format (version line, plan, test points, YAML diagnostics, subtests, directives, escaping rules)
+- **`references/migration.md`** -- Step-by-step guide for migrating from manual PATH/sandcastle/TAP setup to the bats wrapper
 
 ### Example Files
 
