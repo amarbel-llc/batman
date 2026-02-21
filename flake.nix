@@ -92,10 +92,6 @@
             bats-assert-additions
             tap-writer
           ];
-          postBuild = ''
-            mkdir -p $out/nix-support
-            echo 'export BATS_LIB_PATH="'"$out"'/share/bats''${BATS_LIB_PATH:+:$BATS_LIB_PATH}"' > $out/nix-support/setup-hook
-          '';
         };
 
         sandcastle-pkg = sandcastle.packages.${system}.default;
@@ -104,13 +100,57 @@
           name = "bats";
           runtimeInputs = [
             pkgs.bats
+            pkgs.coreutils
             sandcastle-pkg
           ];
           text = ''
-            config="$(mktemp)"
-            trap 'rm -f "$config"' EXIT
+            bin_dirs=()
+            sandbox=true
 
-            cat >"$config" <<SANDCASTLE_CONFIG
+            while (( $# > 0 )); do
+              case "$1" in
+                --bin-dir)
+                  bin_dirs+=("$(realpath "$2")")
+                  shift 2
+                  ;;
+                --no-sandbox)
+                  sandbox=false
+                  shift
+                  ;;
+                --)
+                  shift
+                  break
+                  ;;
+                *)
+                  break
+                  ;;
+              esac
+            done
+
+            # Prepend --bin-dir directories to PATH (leftmost = highest priority)
+            for (( i = ''${#bin_dirs[@]} - 1; i >= 0; i-- )); do
+              export PATH="''${bin_dirs[$i]}:$PATH"
+            done
+
+            # Append batman's bats-libs to BATS_LIB_PATH (caller paths take precedence)
+            export BATS_LIB_PATH="''${BATS_LIB_PATH:+$BATS_LIB_PATH:}${bats-libs}/share/bats"
+
+            # Default to TAP output unless a formatter flag is already present
+            has_formatter=false
+            for arg in "$@"; do
+              case "$arg" in
+                --tap|--formatter|-F|--output) has_formatter=true; break ;;
+              esac
+            done
+            if ! $has_formatter; then
+              set -- "$@" --tap
+            fi
+
+            if $sandbox; then
+              config="$(mktemp)"
+              trap 'rm -f "$config"' EXIT
+
+              cat >"$config" <<SANDCASTLE_CONFIG
             {
               "filesystem": {
                 "denyRead": [
@@ -124,7 +164,8 @@
                 ],
                 "denyWrite": [],
                 "allowWrite": [
-                  "/tmp"
+                  "/tmp",
+                  "/private/tmp"
                 ]
               },
               "network": {
@@ -134,7 +175,10 @@
             }
             SANDCASTLE_CONFIG
 
-            exec sandcastle --shell bash --config "$config" bats "$@"
+              exec sandcastle --shell bash --config "$config" bats "$@"
+            else
+              exec bats "$@"
+            fi
           '';
         };
 
