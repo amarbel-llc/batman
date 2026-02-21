@@ -29,7 +29,8 @@ setup_test_home() {
   git config --global init.defaultBranch main
 }
 
-# Command wrapper: runs the binary under test with normalized defaults
+# Command wrapper: runs the binary under test with normalized defaults.
+# The binary must be on PATH — use `bats --bin-dir <dir>` to inject it.
 cmd_defaults=(
   # Add project-specific default flags here to normalize output
   # -print-colors=false
@@ -39,5 +40,5 @@ cmd_defaults=(
 run_cmd() {
   subcmd="$1"
   shift
-  run timeout --preserve-status "2s" "$CMD_BIN" "$subcmd" ${cmd_defaults[@]} "$@"
+  run timeout --preserve-status "2s" my-command "$subcmd" ${cmd_defaults[@]} "$@"
 }
