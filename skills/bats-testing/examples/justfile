@@ -1,19 +1,17 @@
 # zz-tests_bats/justfile
 # Test-suite justfile for BATS integration tests
 
-export CMD_BIN := "my-command"
-
 bats_timeout := "5"
 
 # Run specific test files (default: all .bats files)
 test-targets *targets="*.bats":
   BATS_TEST_TIMEOUT="{{bats_timeout}}" \
-    bats --tap --jobs {{num_cpus()}} {{targets}}
+    bats --jobs {{num_cpus()}} {{targets}}
 
 # Run tests matching specific tags
 test-tags *tags:
   BATS_TEST_TIMEOUT="{{bats_timeout}}" \
-    bats --tap --jobs {{num_cpus()}} --filter-tags {{tags}} *.bats
+    bats --jobs {{num_cpus()}} --filter-tags {{tags}} *.bats
 
 # Run all tests
 test: (test-targets "*.bats")
